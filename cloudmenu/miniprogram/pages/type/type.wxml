@@ -1,0 +1,16 @@
+<view>
+  <!-- 顶部图片 -->
+  <view class="type-img">
+    <image src="../../static/type/banner.jpg"></image>
+  </view>
+
+  <!-- 分类列表 -->
+  <view class="type-list">
+    <block wx:for="{{ types }}" wx:key="_id">
+      <view class="list-item" data-tid="{{item._id}}" data-tname="{{item.name}}" bindtap="toMenuList">
+        <image src="{{img[index]?img[index]:'../../static/type/type02.jpg'}}"></image>
+        <text>{{ item.name }}</text>
+      </view>
+    </block>
+  </view>
+</view>

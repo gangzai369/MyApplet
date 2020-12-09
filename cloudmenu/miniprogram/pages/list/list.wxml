@@ -1,0 +1,36 @@
+<view>
+  <view wx:if="{{!isLogin}}" class="box">
+      <image src="../../static/my/nologin.jpg"></image>
+      <view>您还未登录~~~</view>
+      <button bindtap="toMy" open-type="reLaunch" type="primary">去登录</button>
+    </view>
+  <!-- 导航栏 -->
+  <block wx:for="{{ dataList }}" wx:key="_id" wx:if="{{isLogin}}">
+    <view class="list" bindtap="toDetail" data-mid="{{item._id}}">
+      <image src="{{ item.images[0] }}" class="recipe-image"></image>
+      <!-- 基本信息 -->
+      <view class="list-info">
+        <view class="list-name">{{ item.name }}</view>
+        <view class="list-info-userinfo">
+          <image src="{{ item.avatarUrl }}"></image>
+          <text>{{ item.nickName }}</text>
+        </view>
+        <view class="xing">
+          <!-- 星星 -->
+          <image wx:for="{{item.star}}" wx:key="index" src="../../static/list/star-yellow.png"></image>
+          <image wx:for="{{5-item.star}}" wx:key="index" src="../../static/list/star-gray.png"></image>
+        </view>
+        <view class="number">
+          <view>
+            <image src="../../static/list/followed.png"></image>
+            <text>{{ item.likes}}</text>
+          </view>
+          <view>
+            <image src="../../static/list/airs.png"></image>
+            <text>{{ item.view }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>
