@@ -38,7 +38,7 @@
       <view wx:if="{{activeIndex=='1'?true:false}}">
         <!-- 没有东西 -->
         <view wx:if="{{recipes.length<=0}}" class="no-pbmenu">
-          <image src="../../static/my/img01.jpg"></image>
+          <image mode="aspectFill" src="../../static/my/img01.jpg"></image>
           <view>您还没发布过菜单哦</view>
         </view>
         <!-- 有东西 -->

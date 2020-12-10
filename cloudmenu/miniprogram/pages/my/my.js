@@ -1,9 +1,13 @@
 import {
   get,
   getOne,
-  remove
+  remove,
+  removeCloud
 } from '../../utils/db'
-import {getStar} from '../../utils/tools'
+import {
+  getStar
+} from '../../utils/tools'
+const db = wx.cloud.database();
 // pages/my/my.js
 Page({
   /**
@@ -23,8 +27,8 @@ Page({
       '../../static/type/type06.jpg'
     ],
     types: [],
-    allLike:[],//保存所属当前用户的菜单列表
-    allMenuList:[]//保存所有的关注信息
+    allLike: [], //保存所属当前用户的菜单列表
+    allMenuList: [] //保存所有的关注信息
   },
   // 跳转pbrecipe页
   toPbrec() {
@@ -33,20 +37,53 @@ Page({
     })
   },
   async _delStyle(e) {
+    let mid = e.currentTarget.dataset.mid;
     wx.showModal({
       title: "删除提示",
       content: "确定要删除么？",
-      success:async (res)=>{
-        if(res.confirm){
-          await remove('menu',e.currentTarget.dataset.mid).then(res=>{
-            wx.showToast({
-              title: '删除成功！',
-            })
-            this.getMenuInfo();
+      success: async (res) => {
+        let files = await this.deleteFile(mid);
+        // console.log(files);
+        if (res.confirm) {
+          wx.showLoading({
+            title:'删除中...'
           })
+          // 删除menu菜谱及其相关的图片
+          await Promise.all(remove('menu', mid), removeCloud(files)).catch(err => {
+            console.log(err);
+            return;
+          })
+          // 利用云函数批量删除与菜单相关的likes集合
+          this.batchDel(mid)
+          this.getMenuInfo();
         }
       }
     })
+  },
+  // 定义函数进行批量删除操作
+  batchDel(id){
+    wx.cloud.callFunction({
+      name:'delsome',
+      data:{
+        mid:id
+      }
+    }).then(res=>{
+      wx.showToast({
+        title: '删除成功！',
+        duration:600
+      })
+    }).catch(err=>{
+      console.log(err);
+      return;
+    })
+  },
+  // 获取一条记录，获取fileID从存储中进行删除
+  async deleteFile(id) {
+    let res = await getOne('menu', id).catch(err => {
+      console.log(err);
+      return;
+    })
+    return res.data.images;
   },
   // 页面加载判断是否登录过
   onLoad() {
@@ -57,33 +94,46 @@ Page({
     this.getLikeList();
   },
   // 根据登录本地的用户获取当前用户收藏的菜谱
-  async getLikeList(){
+  async getLikeList() {
     // 从本地获取user的id
     let userid = wx.getStorageSync('openid');
-    let res = await get('likes',{_openid:userid}).catch(err=>{console.log(err);return;})
+    let res = await get('likes', {
+      _openid: userid
+    }).catch(err => {
+      console.log(err);
+      return;
+    })
+    // console.log(res);return;
     this.setData({
-      allLike:res.data
+      allLike: res.data
     })
     // 获取到地址保存到arr中
-    let arr = this.data.allLike.map(item=>{
+    let arr = this.data.allLike.map(item => {
       return item.menuid
     })
-    // 根据地址获取数据，result是一个对象型数组
-    let result =await Promise.all(arr.map(item=>{
-      return getOne('menu',item).catch(err=>{return})
-    })).catch(err=>{console.log(err);return;})
-    // 再次进行数据获取
-    let dataList = result.map(item=>{
-      return item.data;
-    })
-    // console.log(dataList);
-    // 计算要显示的星星
-    dataList.forEach(item=>{
-      item.star = getStar(item.view)
-    })
-    this.setData({
-      allMenuList:dataList
-    })
+    /*
+      根据地址获取数据，result是一个对象型数组
+      通过command.in进行获取,提高性能
+    */
+    db.collection('menu').where({
+        _id: db.command.in(arr)
+      }).get()
+      .then(res => {
+        let dataList = res.data
+        // 计算要显示的星星
+        dataList.forEach(item => {
+          item.star = getStar(item.view)
+        })
+        this.setData({
+          allMenuList: dataList
+        })
+      })
+    // let res = await get('menu',{
+    //   _id:db.command.in(arr)
+    // })
+    // let result =await Promise.all(arr.map(item=>{
+    //   return getOne('menu',item).catch(err=>{return})
+    // })).catch(err=>{console.log(err);return;})
   },
   // 封装获取type的数据
   async getTypeInfo() {
@@ -106,7 +156,7 @@ Page({
       return;
     })
     // 接收到的数据倒序输出,最新发布的在上方
-    let datalist = result.data.sort(function(a,b){
+    let datalist = result.data.sort(function (a, b) {
       return b.addTime - a.addTime
     })
     this.setData({

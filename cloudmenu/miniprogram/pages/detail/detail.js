@@ -20,6 +20,7 @@ Page({
     menuId: '', //保存当前菜谱的id
     likeId: '', //保存当前用户收藏菜谱的唯一id
     likeList: [], //保存like中的数据
+    bool:true,//点击关注根据状态进行联机判断
   },
   onLoad(query) {
     this.getMenuDetail(query.id);
@@ -84,8 +85,11 @@ Page({
   },
   // 点击关注和取消
   async userLike() {
+    //点击判断，请求排队（返回之后再继续进行）
+    if(!this.data.bool){return;};
     this.setData({
-      islike: !this.data.islike
+      islike: !this.data.islike,
+      bool:false
     })
     // console.log(this.data.menuId);
     wx.getStorageSync('openid')
@@ -100,7 +104,8 @@ Page({
       // 收藏加1
       this.setData({
         likeId: res._id,
-        likes: this.data.likes + 1
+        likes: this.data.likes + 1,
+        bool:true
       })
       this.updateLike(this.data.menuId)
     } else {
@@ -113,6 +118,9 @@ Page({
       await remove('likes', this.data.likeId).catch(err => {
         console.log(err);
         return;
+      })
+      this.setData({
+        bool:true
       })
     }
   },

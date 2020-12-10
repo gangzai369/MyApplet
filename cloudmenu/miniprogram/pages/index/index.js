@@ -26,17 +26,10 @@ Page({
             console.log(err);
             return;
         })
-        if (result.data.length == 0) {
-            wx.showToast({
-                title: '已经到底了~~',
-                duration: 600,
-                icon: 'none'
-            })
-            return;
-        }
         this.setData({
             dataList: this.data.dataList.concat(result.data)
         })
+        return result;
     },
     // 触底加载更多菜品
     async onReachBottom() {
@@ -45,11 +38,21 @@ Page({
             page,
             pageSize
         } = this.data;
-        await this.getPage(page, pageSize)
+        let res = await this.getPage(page, pageSize)
+        if(res.data.length==0){
+            wx.showToast({
+              title: '已经到底了~',
+              duration:600,
+              icon:'none'
+            })
+        }
     },
     // 监听用户下拉动作
-    onPullDownRefresh: function () {
-        this.getMenuInfo(); //重新调用获取函数
+    onPullDownRefresh: async function () {
+        this.setData({
+            dataList:[]
+        })
+        await this.getPage(1, 6) //重新调用获取函数
         wx.stopPullDownRefresh();
         wx.showToast({
             title: '刷新完成',

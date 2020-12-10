@@ -13,6 +13,12 @@ function add(_collection, _data = {}) {
 function remove(_collection, _id) {
   return db.collection(_collection).doc(_id).remove()
 }
+/*
+  删除云存储数据
+*/ 
+function removeCloud(file){
+  return wx.cloud.deleteFile({fileList:file});
+}
 
 /*
 更新
@@ -61,5 +67,6 @@ export {
   get,
   getOne,
   addNumber,
-  getLimit
+  getLimit,
+  removeCloud
 }
